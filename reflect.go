@@ -19,7 +19,7 @@ type Reflector struct {
 /*
 Return type is either a string, a *AvroSchema of a slice of *AvroSchema.
 */
-func (r *Reflector) reflectType(t reflect.Type) any {
+func (r *Reflector) reflectType(t reflect.Type, forFields bool) any {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
@@ -45,13 +45,13 @@ func (r *Reflector) reflectType(t reflect.Type) any {
 	case reflect.Bool:
 		return "boolean"
 	case reflect.Array, reflect.Slice:
-		return r.handleArray(t)
+		return r.handleArray(t, forFields)
 	case reflect.Struct:
 		// handle special built-in types, e.g. time.Time
 		if t == timeType {
 			return &AvroSchema{Type: "long", LogicalType: "timestamp-millis"}
 		}
-		return r.handleRecord(t)
+		return r.handleRecord(t, true)
 	case reflect.Map:
 		if t.Key().Kind() != reflect.String {
 			// If the key is not a string, then treat the whole object as a string.
@@ -64,14 +64,17 @@ func (r *Reflector) reflectType(t reflect.Type) any {
 }
 
 func (r *Reflector) handleMap(t reflect.Type) *AvroSchema {
-	return &AvroSchema{Type: "map", Values: r.reflectType(t.Elem())}
+	return &AvroSchema{Type: "map", Values: r.reflectType(t.Elem(), false)}
 }
 
-func (r *Reflector) handleArray(t reflect.Type) *AvroSchema {
-	return &AvroSchema{Type: "array", Items: r.reflectType(t.Elem())}
+func (r *Reflector) handleArray(t reflect.Type, forFields bool) *AvroSchema {
+	if forFields {
+		return &AvroSchema{Type: AvroSchema{Type: "array", Items: r.reflectType(t.Elem(), false)}}
+	}
+	return &AvroSchema{Type: "array", Items: r.reflectType(t.Elem(), false)}
 }
 
-func (r *Reflector) handleRecord(t reflect.Type) *AvroSchema {
+func (r *Reflector) handleRecord(t reflect.Type, forFields bool) *AvroSchema {
 	name := t.Name()
 	tokens := strings.Split(name, ".")
 	name = tokens[len(tokens)-1]
@@ -88,7 +91,7 @@ func (r *Reflector) handleRecord(t reflect.Type) *AvroSchema {
 		if jsonFieldName == "" && bsonTag == "" {
 			continue
 		}
-		ret.Fields = append(ret.Fields, r.reflectEx(f.Type, isOptional, jsonFieldName)...)
+		ret.Fields = append(ret.Fields, r.reflectEx(f.Type, isOptional, jsonFieldName, forFields)...)
 	}
 	return ret
 }
@@ -98,12 +101,13 @@ Fill in the Name for the AvroSchema.
 If the reflectType is a simple string, generate an AvroSchema and filled in Type.
 But if it is already an AvroSchema, only the Name needs to be filled in.
 */
-func (r *Reflector) reflectEx(t reflect.Type, isOpt bool, n string) []*AvroSchema {
-	ret := r.reflectType(t)
+func (r *Reflector) reflectEx(t reflect.Type, isOpt bool, n string, forFields bool) []*AvroSchema {
+	ret := r.reflectType(t, false)
 
 	// optional field
 	if isOpt || r.BeBackwardTransitive {
-		return []*AvroSchema{{Name: n, Type: []any{"null", ret}}}
+		null := interface{}(nil)
+		return []*AvroSchema{{Name: n, Type: []any{"null", ret}, Default: &null}}
 	}
 
 	// primitive type
@@ -111,6 +115,7 @@ func (r *Reflector) reflectEx(t reflect.Type, isOpt bool, n string) []*AvroSchem
 		return []*AvroSchema{{Name: n, Type: ret}}
 	}
 
+	ret = r.reflectType(t, forFields)
 	result, ok := ret.(*AvroSchema)
 	// made by extension, i.e., a slice
 	if !ok {
@@ -132,7 +137,7 @@ func (r *Reflector) ReflectFromType(v any) (string, error) {
 		t = t.Elem()
 	}
 
-	data := r.handleRecord(t)
+	data := r.handleRecord(t, false)
 
 	return StructToJson(data)
 }
@@ -148,4 +153,25 @@ func Reflect(v any) (string, error) {
 	r := &Reflector{}
 
 	return r.ReflectFromType(v)
+}
+
+func (r *Reflector) ReflectFromTypeWithArray(v any) (string, error) {
+	t := reflect.TypeOf(v)
+
+	data := r.handleArray(t, false)
+
+	return StructToJson(data)
+}
+
+/*
+For customizing mapper, etc.
+*/
+func (r *Reflector) ReflectWithArray(v any) (string, error) {
+	return r.ReflectFromTypeWithArray(v)
+}
+
+func ReflectWithArray(v any) (string, error) {
+	r := &Reflector{}
+
+	return r.ReflectFromTypeWithArray(v)
 }

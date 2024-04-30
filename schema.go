@@ -11,7 +11,7 @@ type AvroSchema struct {
 	Namespace   string        `json:"namespace,omitempty"`
 	Doc         string        `json:"doc,omitempty"`
 	Aliases     []string      `json:"aliases,omitempty"`
-	Default     any           `json:"default,omitempty"`
+	Default     *any          `json:"default,omitempty"`
 	LogicalType string        `json:"logicalType,omitempty"`
 }
 

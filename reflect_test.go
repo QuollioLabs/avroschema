@@ -316,12 +316,19 @@ func TestUnionPrimitiveType(t *testing.T) {
 	}
 
 	expected := `{
-    "name": "Entity",
-    "type": "record",
-    "fields": [
-      {"name": "union_field", "type": ["null", "int"]}
-    ]
-  }`
+		"name": "Entity",
+		"type": "record",
+		"fields": [
+			{
+				"name": "union_field",
+				"type": [
+					"null",
+					"int"
+				],
+				"default": null
+			}
+		]
+	}`
 
 	e := Entity{}
 
@@ -339,14 +346,28 @@ func TestUnionRecordType(t *testing.T) {
 	}
 
 	expected := `{
-    "name": "Entity",
-    "type": "record",
-    "fields": [
-      {"name": "union_field", "type": ["null", {
-        "name": "Foo", "type": "record", "fields": [{"name": "bar", "type": "string"}]
-      }]}
-    ]
-  }`
+		"name": "Entity",
+		"type": "record",
+		"fields": [
+			{
+				"name": "union_field",
+				"type": [
+					"null",
+					{
+						"name": "Foo",
+						"type": "record",
+						"fields": [
+							{
+								"name": "bar",
+								"type": "string"
+							}
+						]
+					}
+				],
+				"default": null
+			}
+		]
+	}`
 
 	e := Entity{}
 
@@ -361,14 +382,22 @@ func TestUnionArrayType(t *testing.T) {
 	}
 
 	expected := `{
-    "name": "Entity",
-    "type": "record",
-    "fields": [
-      {"name": "union_array_field", "type": ["null", {
-        "type": "array", "items": "int"
-      }]}
-    ]
-  }`
+		"name": "Entity",
+		"type": "record",
+		"fields": [
+			{
+				"name": "union_array_field",
+				"type": [
+					"null",
+					{
+						"type": "array",
+						"items": "int"
+					}
+				],
+				"default": null
+			}
+		]
+	}`
 
 	e := Entity{}
 
@@ -387,16 +416,51 @@ func TestBackwardTransitive(t *testing.T) {
 	}
 
 	expected := `{
-    "name": "Entity",
-    "type": "record",
-    "fields": [
-      {"name": "a_str_field", "type": ["null", "string"]},
-      {"name": "a_int_field", "type": ["null", "int"]},
-      {"name": "a_bool_field", "type": ["null", "boolean"]},
-      {"name": "a_float_field", "type": ["null", "float"]},
-      {"name": "a_double_field", "type": ["null", "double"]}
-    ]
-  }`
+		"name": "Entity",
+		"type": "record",
+		"fields": [
+			{
+				"name": "a_str_field",
+				"type": [
+					"null",
+					"string"
+				],
+				"default": null
+			},
+			{
+				"name": "a_int_field",
+				"type": [
+					"null",
+					"int"
+				],
+				"default": null
+			},
+			{
+				"name": "a_bool_field",
+				"type": [
+					"null",
+					"boolean"
+				],
+				"default": null
+			},
+			{
+				"name": "a_float_field",
+				"type": [
+					"null",
+					"float"
+				],
+				"default": null
+			},
+			{
+				"name": "a_double_field",
+				"type": [
+					"null",
+					"double"
+				],
+				"default": null
+			}
+		]
+	}`
 
 	e := Entity{}
 
