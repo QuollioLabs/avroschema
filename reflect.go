@@ -137,7 +137,7 @@ func (r *Reflector) ReflectFromType(v any) (string, error) {
 		t = t.Elem()
 	}
 
-	data := r.handleRecord(t, false)
+	data := r.handleRecord(t, true)
 
 	return StructToJson(data)
 }
